@@ -2,3 +2,4 @@ node_modules
 outDir
 *.md
 *.txt
+images_out

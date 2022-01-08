@@ -39,7 +39,7 @@ export const getOptions = () => {
       "User-Agent": UserAgent,
       "X-Forwarded-For": getRandomIp(),
     },
-    timeout:5000,
+    timeout: 5000,
   }
   return options;
 }

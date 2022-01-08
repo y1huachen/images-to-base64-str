@@ -9,5 +9,10 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "type": "module"
+  "type": "module",
+  "dependencies": {
+    "chalk": "^5.0.0",
+    "md5": "^2.3.0",
+    "minimist": "^1.2.5"
+  }
 }

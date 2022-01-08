@@ -1,17 +1,35 @@
-import path from 'path';
-import { readdir, readFile, writeFile, stat } from 'fs/promises';
+import path, { extname } from 'path';
+import { constants } from 'fs';
+import { readdir, readFile, writeFile, stat, access, mkdir } from 'fs/promises';
 import { uploadFile, download } from './utils.js';
+import parsedArgs from 'minimist';
 
-const dir = 'images';
-const outDir = 'outDir';
+const args = parsedArgs(process.argv.slice(2));
+console.log('args', args);
 
-const readImages = async (rootPath) => {
+const defaultInputDir = 'images';
+const outDirSuffix = '_out';
+let outDir = '';
+
+const includeFileTypeArr = ['.png', '.jpg'];
+const excludeDirArr = ['dist', 'build', 'node_modules', 'config'];
+
+const isFileOrDirExist = async (dir) => {
   try {
-    const images = await readdir(rootPath);
-    const taskArr = images.map((image) => {
-      const filePath = path.join(rootPath, image);
-      console.log('filePath', filePath);
-      return squashFile(image, filePath);
+    await access(dir, constants.F_OK);
+    return true;
+  } catch {
+    console.error('cannot access');
+    return false;
+  }
+}
+
+const handleImages = async (rootPath) => {
+  try {
+    const files = []
+    await getFilesFromDir(rootPath, files);
+    const taskArr = files.map((file) => {
+      return squashFile(file);
     });
     output(taskArr);
   } catch (error) {
@@ -19,18 +37,41 @@ const readImages = async (rootPath) => {
   }
 }
 
-readImages(dir);
+const getFilesFromDir = async (dirPath, fileList) => {
+  const files = await readdir(dirPath);
+  for (const file of files) {
+    const filePath = path.join(dirPath, file);
+    console.log('filePath', filePath);
+    const states = await stat(filePath);
+    const extName = extname(file);
+    if (states.isFile()) {
+      const fileInfo = {
+        size: states.size,
+        name: file,
+        filePath,
+      };
+      if (includeFileTypeArr.includes(extName)) {
+        fileList.push(fileInfo);
+      }
+    } else {
+      // 递归获取文件
+      if (!excludeDirArr.includes(file)) {
+        getFilesFromDir(filePath, fileList);
+      }
+    }
+  }
+}
 
-const squashFile = async (name, filePath) => {
+const squashFile = async (file) => {
+  const { name, filePath, size } = file;
   const data = await readFile(filePath, 'binary');
   const { output = {} } = await uploadFile(data);
   if (!output?.url) return;
   const image = await download(output.url);
   if (!image) return;
-  const outPath = path.join(outDir, name);
+  const outPath = path.join(outDir, 'images', name);
   console.log('outPath', outPath);
   await writeFile(outPath, image, 'binary');
-  const size = (await stat(filePath)).size;
   const miniSize = (await stat(outPath)).size;
   return {
     size,
@@ -92,7 +133,8 @@ const outputMd = (list) => {
 | 原始体积 | 压缩后提交 | 压缩比 |\n| -- | -- | -- |\n| ${transformSize(size)} | ${transformSize(miniSize)} | ${(100 * (size - miniSize) / size).toFixed(2) + '%'} |
   `
   str = str + s
-  writeFile('图片压缩比.md', str, 'utf-8');
+  const writePath = path.join(outDir, '图片压缩比.md');
+  writeFile(writePath, str, 'utf-8');
 }
 
 const outputBase64 = (list) => {
@@ -102,5 +144,36 @@ const outputBase64 = (list) => {
     const lineStr = `${realName}: '${str}'\n`;
     return lineStr;
   }).join('');
-  writeFile('base64.txt', res, 'utf-8');
+  const writePath = path.join(outDir, 'base64.txt');
+  writeFile(writePath, res, 'utf-8');
 }
+
+const main = async () => {
+  try {
+    const inputDir = args['folder'] || defaultInputDir;
+    const checkInputDir = await isFileOrDirExist(inputDir);
+    if (!checkInputDir) {
+      console.error('当前文件夹不存在，请更换压缩目录');
+      return;
+    }
+    console.log('inputDir', inputDir);
+    outDir = inputDir + outDirSuffix;
+    const checkOutDir = await isFileOrDirExist(outDir);
+    if (!checkOutDir) {
+      console.log('当前文件夹不存在，将创建输出目录');
+      await mkdir(outDir);
+      console.log('创建输出目录成功');
+    }
+    console.log('outDir', outDir);
+    const outImagesDir = path.join(outDir, 'images');
+    const checkOutImagesDir = await isFileOrDirExist(outImagesDir);
+    if (!checkOutImagesDir) {
+      await mkdir(outImagesDir);
+    }
+    handleImages(inputDir);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
+main();
