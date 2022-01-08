@@ -1,5 +1,5 @@
 {
-  "name": "image-to-base64",
+  "name": "images-to-base64-str",
   "version": "1.0.0",
   "description": "Batch compress a set of original pictures and convert them into the corresponding base64 string and put them into the clipboard",
   "main": "index.js",
