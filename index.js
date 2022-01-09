@@ -1,3 +1,5 @@
+#!/usr/bin/env node --experimental-modules
+
 import path, { extname } from 'path';
 import { constants } from 'fs';
 import { readdir, readFile, writeFile, stat, access, mkdir } from 'fs/promises';

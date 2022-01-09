@@ -4,7 +4,8 @@
   "description": "Batch compress a set of original pictures and convert them into the corresponding base64 string and put them into the clipboard",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build": ""
   },
   "bin": {
     "image-to-base64": "index.js"
@@ -13,9 +14,14 @@
   "author": "",
   "license": "ISC",
   "type": "module",
+  "preferGlobal": true,
   "dependencies": {
     "chalk": "^5.0.0",
     "md5": "^2.3.0",
     "minimist": "^1.2.5"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.16.7",
+    "@babel/preset-env": "^7.16.7"
   }
 }
