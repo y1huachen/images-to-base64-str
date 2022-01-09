@@ -1,10 +1,13 @@
 {
   "name": "images-to-base64-str",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Batch compress a set of original pictures and convert them into the corresponding base64 string and put them into the clipboard",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "bin": {
+    "image-to-base64": "index.js"
   },
   "keywords": [],
   "author": "",
